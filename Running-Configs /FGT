@@ -1,0 +1,350 @@
+============================================================
+RUNNING-CONFIG - FGT-USUARIOS
+============================================================
+
+
+==================== INTERFACES ====================
+
+config system interface
+
+    edit "port1"
+        set vdom "root"
+        set mode dhcp
+        set allowaccess ping https ssh http
+        set type physical
+        set snmp-index 1
+    next
+
+    edit "port3"
+        set vdom "root"
+        set ip 10.8.27.1 255.255.255.128
+        set allowaccess ping
+        set type physical
+        set alias "USUARIOS-VLAN10"
+        set device-identification enable
+        set lldp-transmission enable
+        set role lan
+        set snmp-index 3
+    next
+
+    edit "VPN-USER-SERVER"
+        set vdom "root"
+        set type tunnel
+        set snmp-index 15
+        set interface "port1"
+    next
+
+end
+
+
+==================== DHCP ====================
+
+config system dhcp server
+
+    edit 2
+        set dns-service default
+        set default-gateway 10.8.27.1
+        set netmask 255.255.255.128
+        set interface "port3"
+
+        config ip-range
+            edit 1
+                set start-ip 10.8.27.2
+                set end-ip 10.8.27.126
+            next
+        end
+
+    next
+
+end
+
+
+==================== OBJETOS DE DIRECCIONES ====================
+
+config firewall address
+
+    edit "VPN-USER-SERVER_local_subnet_1"
+        set allow-routing enable
+        set subnet 10.8.27.0 255.255.255.128
+    next
+
+    edit "VPN-USER-SERVER_remote_subnet_1"
+        set allow-routing enable
+        set subnet 172.8.27.0 255.255.255.240
+    next
+
+end
+
+
+==================== RUTAS ESTATICAS ====================
+
+config router static
+
+    edit 1
+        set device "VPN-USER-SERVER"
+        set comment "VPN: VPN-USER-SERVER (Created by VPN wizard)"
+        set dstaddr "VPN-USER-SERVER_remote"
+    next
+
+    edit 2
+        set distance 254
+        set comment "VPN: VPN-USER-SERVER (Created by VPN wizard)"
+        set blackhole enable
+        set dstaddr "VPN-USER-SERVER_remote"
+    next
+
+end
+
+
+==================== POLITICAS DE FIREWALL ====================
+
+config firewall policy
+
+    edit 1
+        set name "vpn_VPN-USER-SERVER_local_0"
+        set srcintf "port3"
+        set dstintf "VPN-USER-SERVER"
+        set action accept
+        set srcaddr "VPN-USER-SERVER_local"
+        set dstaddr "VPN-USER-SERVER_remote"
+        set schedule "always"
+        set service "ALL"
+        set comments "VPN: VPN-USER-SERVER (Created by VPN wizard)"
+    next
+
+    edit 2
+        set name "vpn_VPN-USER-SERVER_remote_0"
+        set srcintf "VPN-USER-SERVER"
+        set dstintf "port3"
+        set action accept
+        set srcaddr "VPN-USER-SERVER_remote"
+        set dstaddr "VPN-USER-SERVER_local"
+        set schedule "always"
+        set service "ALL"
+        set comments "VPN: VPN-USER-SERVER (Created by VPN wizard)"
+    next
+
+    edit 3
+        set name "USUARIOS-INTERNET"
+        set srcintf "port3"
+        set dstintf "port1"
+        set action accept
+        set srcaddr "all"
+        set dstaddr "all"
+        set schedule "always"
+        set service "ALL"
+        set nat enable
+    next
+
+end
+
+
+==================== VPN IPSEC - PHASE 1 ====================
+
+config vpn ipsec phase1-interface
+
+    edit "VPN-USER-SERVER"
+        set interface "port1"
+        set peertype any
+        set net-device disable
+        set proposal des-md5 des-sha1
+        set comments "VPN: VPN-USER-SERVER (Created by VPN wizard)"
+        set wizard-type static-fortigate
+        set remote-gw 192.168.42.37
+
+        # PSK omitida de la documentación pública por seguridad.
+        # La clave se encuentra configurada en el dispositivo.
+
+    next
+
+end
+
+
+==================== VPN IPSEC - PHASE 2 ====================
+
+config vpn ipsec phase2-interface
+
+    edit "VPN-USER-SERVER"
+        set phase1name "VPN-USER-SERVER"
+        set proposal des-md5 des-sha1
+        set comments "VPN: VPN-USER-SERVER (Created by VPN wizard)"
+        set src-addr-type name
+        set dst-addr-type name
+        set src-name "VPN-USER-SERVER_local"
+        set dst-name "VPN-USER-SERVER_remote"
+    next
+
+end
+
+
+============================================================
+FIN DEL RUNNING-CONFIG - FGT-USUARIOS
+============================================================
+
+
+----------
+
+
+============================================================
+RUNNING-CONFIG - FGT-SERVIDOR
+Infraestructura 1 - VPN IPsec Site-to-Site
+Estudiante: Merolyn Mejía
+Matrícula: 2025-0827
+============================================================
+
+
+==================== INTERFACES ====================
+
+config system interface
+
+    edit "port1"
+        set vdom "root"
+        set mode dhcp
+        set allowaccess ping https ssh http
+        set type physical
+        set snmp-index 1
+    next
+
+    edit "port3"
+        set vdom "root"
+        set ip 172.8.27.1 255.255.255.240
+        set allowaccess ping
+        set type physical
+        set alias "SERVIDORES"
+        set device-identification enable
+        set lldp-transmission enable
+        set role lan
+        set snmp-index 3
+    next
+
+    edit "VPN-SERVER-USER"
+        set vdom "root"
+        set type tunnel
+        set snmp-index 15
+        set interface "port1"
+    next
+
+end
+
+
+==================== OBJETOS DE DIRECCIONES ====================
+
+config firewall address
+
+    edit "VPN-SERVER-USER_local_subnet_1"
+        set allow-routing enable
+        set subnet 172.8.27.0 255.255.255.240
+    next
+
+    edit "VPN-SERVER-USER_remote_subnet_1"
+        set allow-routing enable
+        set subnet 10.8.27.0 255.255.255.128
+    next
+
+end
+
+
+==================== RUTAS ESTATICAS ====================
+
+config router static
+
+    edit 1
+        set device "VPN-SERVER-USER"
+        set comment "VPN: VPN-SERVER-USER (Created by VPN wizard)"
+        set dstaddr "VPN-SERVER-USER_remote"
+    next
+
+    edit 2
+        set distance 254
+        set comment "VPN: VPN-SERVER-USER (Created by VPN wizard)"
+        set blackhole enable
+        set dstaddr "VPN-SERVER-USER_remote"
+    next
+
+end
+
+
+==================== POLITICAS DE FIREWALL ====================
+
+config firewall policy
+
+    edit 1
+        set name "vpn_VPN-SERVER-USER_local_0"
+        set srcintf "port3"
+        set dstintf "VPN-SERVER-USER"
+        set action accept
+        set srcaddr "VPN-SERVER-USER_local"
+        set dstaddr "VPN-SERVER-USER_remote"
+        set schedule "always"
+        set service "ALL"
+        set comments "VPN: VPN-SERVER-USER (Created by VPN wizard)"
+    next
+
+    edit 2
+        set name "vpn_VPN-SERVER-USER_remote_0"
+        set srcintf "VPN-SERVER-USER"
+        set dstintf "port3"
+        set action accept
+        set srcaddr "VPN-SERVER-USER_remote"
+        set dstaddr "VPN-SERVER-USER_local"
+        set schedule "always"
+        set service "ALL"
+        set comments "VPN: VPN-SERVER-USER (Created by VPN wizard)"
+    next
+
+    edit 3
+        set name "SERVIDOR-INTERNET"
+        set srcintf "port3"
+        set dstintf "port1"
+        set action accept
+        set srcaddr "all"
+        set dstaddr "all"
+        set schedule "always"
+        set service "ALL"
+        set nat enable
+    next
+
+end
+
+
+==================== VPN IPSEC - PHASE 1 ====================
+
+config vpn ipsec phase1-interface
+
+    edit "VPN-SERVER-USER"
+        set interface "port1"
+        set peertype any
+        set net-device disable
+        set proposal des-md5 des-sha1
+        set comments "VPN: VPN-SERVER-USER (Created by VPN wizard)"
+        set wizard-type static-fortigate
+        set remote-gw 192.168.42.233
+
+        # PSK omitida de la documentación pública por seguridad.
+        # La clave se encuentra configurada en el dispositivo.
+
+    next
+
+end
+
+
+==================== VPN IPSEC - PHASE 2 ====================
+
+config vpn ipsec phase2-interface
+
+    edit "VPN-SERVER-USER"
+        set phase1name "VPN-SERVER-USER"
+        set proposal des-md5 des-sha1
+        set comments "VPN: VPN-SERVER-USER (Created by VPN wizard)"
+        set src-addr-type name
+        set dst-addr-type name
+        set src-name "VPN-SERVER-USER_local"
+        set dst-name "VPN-SERVER-USER_remote"
+    next
+
+end
+
+
+============================================================
+FIN DEL RUNNING-CONFIG - FGT-SERVIDOR
+============================================================
