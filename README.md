@@ -54,6 +54,7 @@ La infraestructura está formada por:
 ![Topología de la infraestructura](Imagenes/image01.png)
 
 ---
+---
 
 ## Direccionamiento IP
 
@@ -86,6 +87,7 @@ El gateway utilizado es:
 ![WAN FGT-USUARIOS](Imagenes/image02.png)
 
 ---
+---
 
 ## Interfaz LAN de usuarios
 
@@ -99,6 +101,7 @@ La interfaz correspondiente a la red de usuarios fue configurada con:
 
 ![LAN FGT-USUARIOS](Imagenes/image03.png)
 
+---
 ---
 
 ## DHCP para usuarios
@@ -117,6 +120,7 @@ Se habilitó DHCP en la red de usuarios para asignar automáticamente las direcc
 ![DHCP Usuarios](Imagenes/image04.png)
 
 ---
+---
 
 ## Dirección obtenida por el usuario
 
@@ -124,6 +128,7 @@ El equipo `USUARIOS-VLAN10` obtiene correctamente una dirección IP pertenecient
 
 ![IP del usuario](Imagenes/image05.png)
 
+---
 ---
 
 # Configuración del FGT-SERVIDOR
@@ -141,6 +146,7 @@ Gateway:
 ![WAN FGT-SERVIDOR](Imagenes/image06.png)
 
 ---
+---
 
 ## Interfaz LAN de servidores
 
@@ -154,6 +160,7 @@ La interfaz de servidores fue configurada con:
 
 ![LAN FGT-SERVIDOR](Imagenes/image07.png)
 
+---
 ---
 
 ## WEB-SERVER
@@ -172,6 +179,7 @@ default via 172.8.27.1
 
 ![Ruta WEB-SERVER](Imagenes/image09.png)
 
+---
 ---
 
 # Enrutamiento
@@ -197,6 +205,7 @@ es alcanzada mediante la VPN.
 ![Rutas FGT-USUARIOS](Imagenes/image10.png)
 
 ---
+---
 
 ## Rutas del FGT-SERVIDOR
 
@@ -214,6 +223,7 @@ se encuentra directamente conectada al FortiGate.
 
 ![Rutas FGT-SERVIDOR](Imagenes/image11.png)
 
+---
 ---
 
 # Políticas de firewall y NAT
@@ -242,6 +252,7 @@ VPN-USER-SERVER → USUARIOS-VLAN10
 ![Políticas FGT-USUARIOS](Imagenes/image12.png)
 
 ---
+---
 
 ## FGT-SERVIDOR
 
@@ -253,6 +264,7 @@ También se configuró la política de retorno desde el túnel hacia la red de s
 
 ![Políticas FGT-SERVIDOR](Imagenes/image13.png)
 
+---
 ---
 
 # VPN IPsec Site-to-Site
@@ -278,6 +290,7 @@ El túnel también se encuentra en estado **Up**.
 Esto confirma que ambos extremos del túnel IPsec fueron establecidos correctamente.
 
 ---
+---
 
 # Pruebas de funcionamiento
 
@@ -295,6 +308,7 @@ En la misma evidencia se observan los túneles IPsec en estado **Up**.
 
 **Resultado:** comunicación exitosa entre la red de usuarios y la red de servidores.
 
+---
 ---
 
 ## Prueba 2 - Bloqueo del tráfico
@@ -316,6 +330,7 @@ timeout
 Esto demuestra que aunque la infraestructura VPN esté configurada, las políticas de firewall determinan si el tráfico puede atravesar el FortiGate.
 
 ---
+---
 
 ## Prueba 3 - Restauración de la comunicación
 
@@ -330,6 +345,7 @@ La comunicación fue restaurada correctamente.
 Por lo tanto, las pruebas muestran el comportamiento esperado que seria que mientras la politica esta habilitada, la comunicación esta permitida y en cuanto se desactiva, la comunicación es bloqueada pero en cuanto la habilitamos de nuevo, la comunicación queda restaurada
 
 ---
+---
 
 # Conclusión
 
@@ -340,11 +356,10 @@ Las pruebas permitieron comprobar que el usuario de la red `10.8.27.0/25` puede 
 Con esto se comprobó de manera práctica el funcionamiento del túnel IPsec y la importancia de las políticas de firewall para controlar el tráfico entre ambas redes.
 
 ---
+---
 
 # Archivos del repositorio
 
 La carpeta **Imagenes** contiene las evidencias visuales utilizadas en esta documentación.
-
-La carpeta **Scripts** contiene los scripts utilizados durante la configuración del laboratorio.
 
 La carpeta **Running-Configs** contiene las configuraciones exportadas de los dispositivos FortiGate.
