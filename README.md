@@ -10,7 +10,7 @@
 ## 🎥 Video demostrativo
 
 **Enlace del video:**  
-[https://youtu.be/VYO3u3gqH28]
+https://youtu.be/VYO3u3gqH28
 
 ---
 
