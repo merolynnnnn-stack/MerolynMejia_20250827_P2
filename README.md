@@ -53,6 +53,13 @@ La infraestructura está formada por:
 
 ![Topología de la infraestructura](Imagenes/image01.png)
 
+La topología está dividida en dos redes internas que se comunican mediante una VPN IPsec Site-to-Site. En el primer extremo se encuentra el FGT-USUARIOS, encargado de administrar la red `10.8.27.0/25`, donde se encuentra el equipo que representa al usuario.
+
+En el segundo extremo se encuentra el FGT-SERVIDOR, encargado de administrar la red `172.8.27.0/28`, donde se encuentra el WEB-SERVER.
+
+Ambos FortiGate están conectados mediante un segmento WAN que representa el ISP dentro del entorno de GNS3. Sobre esta conexión se establece el túnel IPsec que permite transportar el tráfico entre las dos redes internas.
+
+De esta manera, las redes privadas no necesitan estar conectadas directamente, sino que utilizan los dos FortiGate como extremos de la comunicación segura.
 ---
 ---
 
@@ -68,7 +75,13 @@ La infraestructura está formada por:
 | FGT-SERVIDOR | SERVIDORES / LAN | 172.8.27.1/28 |
 | WEB-SERVER | Servidor | 172.8.27.2/28 |
 
-Las redes internas utilizan como referencia los últimos dígitos de la matrícula **2025-0827**, específicamente `8.27`.
+El direccionamiento fue diseñado utilizando como referencia los últimos cuatro dígitos de la matrícula `2025-0827`, por lo que se utilizaron los identificadores `8.27` en las redes internas.
+
+La red de usuarios utiliza `10.8.27.0/25`, proporcionando espacio suficiente para los dispositivos pertenecientes a este segmento. El FGT-USUARIOS utiliza `10.8.27.1` como gateway y proporciona direccionamiento mediante DHCP.
+
+La red de servidores utiliza `172.8.27.0/28`. En este segmento, el FGT-SERVIDOR utiliza `172.8.27.1` como gateway y el WEB-SERVER utiliza `172.8.27.2`.
+
+Para la comunicación entre ambos FortiGate se utiliza el segmento `192.168.42.0/24`, que representa la red WAN/ISP dentro del laboratorio virtualizado en GNS3.
 
 ---
 
@@ -86,6 +99,13 @@ El gateway utilizado es:
 
 ![WAN FGT-USUARIOS](Imagenes/image02.png)
 
+### Función del FGT-USUARIOS
+El FGT-USUARIOS representa el extremo de la infraestructura donde se encuentra la red de clientes. Su función principal es proporcionar conectividad a los equipos de usuarios, administrar el direccionamiento de esta red y controlar el tráfico que sale hacia Internet o que se dirige hacia la red remota de servidores.
+
+Además, este FortiGate participa como uno de los extremos de la VPN IPsec Site-to-Site. Por medio de la VPN, el tráfico destinado a la red `172.8.27.0/28` puede ser enviado hacia el FGT-SERVIDOR.
+
+Las configuraciones realizadas en este dispositivo incluyen la interfaz WAN, la interfaz LAN de usuarios, DHCP, rutas, políticas de firewall, NAT y la configuración del túnel IPsec.
+
 ---
 ---
 
@@ -101,10 +121,27 @@ La interfaz correspondiente a la red de usuarios fue configurada con:
 
 ![LAN FGT-USUARIOS](Imagenes/image03.png)
 
+### Función de la interfaz WAN
+
+La interfaz `port1` es utilizada como conexión externa del FGT-USUARIOS. Esta interfaz permite la comunicación con el segmento WAN/ISP y sirve como punto de salida hacia el otro extremo de la infraestructura.
+
+La dirección `192.168.42.233/24` identifica al FGT-USUARIOS dentro de esta red. El gateway `192.168.42.1` corresponde al dispositivo que representa la salida hacia el segmento ISP.
+
+Esta interfaz también es utilizada como interfaz de transporte para establecer la comunicación IPsec con el FGT-SERVIDOR.
+
 ---
 ---
 
 ## DHCP para usuarios
+### Funcionamiento del DHCP
+
+El servicio DHCP fue habilitado en el FGT-USUARIOS para evitar que las direcciones IP de los clientes tuvieran que configurarse manualmente.
+
+El rango disponible comprende desde `10.8.27.2` hasta `10.8.27.126`, utilizando la máscara `255.255.255.128`.
+
+El gateway entregado a los clientes es `10.8.27.1`, correspondiente a la interfaz LAN del FortiGate.
+
+De esta manera, cuando el equipo de usuario se conecta a la red, puede obtener automáticamente los parámetros necesarios para comunicarse con el resto de la infraestructura.
 
 Se habilitó DHCP en la red de usuarios para asignar automáticamente las direcciones IP a los clientes.
 
@@ -183,6 +220,14 @@ default via 172.8.27.1
 ---
 
 # Enrutamiento
+
+## Importancia del enrutamiento
+
+El enrutamiento permite que cada FortiGate conozca cómo alcanzar las redes que se encuentran fuera de sus segmentos directamente conectados.
+
+En esta infraestructura, el FGT-USUARIOS necesita conocer el camino hacia `172.8.27.0/28`, mientras que el FGT-SERVIDOR necesita conocer el camino de regreso hacia `10.8.27.0/25`.
+
+Estas rutas son necesarias para que exista comunicación bidireccional. No basta con establecer el túnel VPN; ambos extremos deben saber hacia dónde enviar el tráfico y cómo regresar las respuestas.
 
 ## Rutas del FGT-USUARIOS
 
@@ -269,6 +314,22 @@ También se configuró la política de retorno desde el túnel hacia la red de s
 
 # VPN IPsec Site-to-Site
 
+## Funcionamiento de la VPN
+
+La VPN IPsec Site-to-Site permite conectar de forma lógica las dos redes privadas aunque físicamente se encuentren separadas por el segmento WAN/ISP.
+
+El FGT-USUARIOS establece el túnel `VPN-USER-SERVER` con el FGT-SERVIDOR, mientras que en el extremo contrario se encuentra la VPN `VPN-SERVER-USER`.
+
+La comunicación utiliza el segmento WAN únicamente como medio de transporte entre ambos extremos. Una vez establecido el túnel, el tráfico destinado a las redes remotas puede ser procesado mediante IPsec.
+
+Los selectores de la VPN identifican las redes internas que participan en la comunicación:
+
+- Red de usuarios: `10.8.27.0/25`
+- Red de servidores: `172.8.27.0/28`
+
+El objetivo es que el tráfico entre ambas redes utilice el túnel en lugar de atravesar la red externa como tráfico interno sin protección.
+
+
 Se configuró una VPN **IPsec Site-to-Site** entre los dos FortiGate.
 
 ### Lado Usuarios
@@ -289,10 +350,30 @@ El túnel también se encuentra en estado **Up**.
 
 Esto confirma que ambos extremos del túnel IPsec fueron establecidos correctamente.
 
+### Validación del túnel
+
+La visualización del estado `Up` en ambos FortiGate confirma que los dos extremos de la VPN lograron establecer correctamente la conexión IPsec.
+
+Sin embargo, el estado `Up` por sí solo no demuestra que las políticas de firewall permitan el tráfico. Por esta razón, posteriormente se realizaron pruebas de comunicación, deshabilitando y habilitando nuevamente la política correspondiente.
+
+De esta manera se pudo comprobar tanto el establecimiento de la VPN como el efecto de las políticas de seguridad sobre el tráfico que atraviesa el túnel.
+
 ---
 ---
 
 # Pruebas de funcionamiento
+
+## Objetivo de las pruebas
+
+Las pruebas fueron realizadas para comprobar que la infraestructura no solamente tiene configurados los dispositivos y el túnel VPN, sino que la comunicación funciona de acuerdo con las políticas establecidas.
+
+Se realizaron tres escenarios:
+
+1. Comunicación con la VPN y las políticas habilitadas.
+2. Bloqueo de la comunicación mediante la deshabilitación de la política correspondiente.
+3. Restauración de la política y comprobación nuevamente de la comunicación.
+
+Este procedimiento permite comparar el comportamiento de la red cuando el tráfico está permitido y cuando el firewall lo bloquea.
 
 ## Prueba 1 - Comunicación con la VPN operativa
 
@@ -306,7 +387,15 @@ En la misma evidencia se observan los túneles IPsec en estado **Up**.
 
 ![VPN funcionando](Imagenes/image16.png)
 
-**Resultado:** comunicación exitosa entre la red de usuarios y la red de servidores.
+### Análisis del resultado
+
+El resultado exitoso del ping demuestra que existe conectividad entre las dos redes privadas.
+
+El equipo de usuarios, ubicado en `10.8.27.0/25`, puede alcanzar el WEB-SERVER ubicado en `172.8.27.0/28`.
+
+Además, el estado `Up` de los túneles confirma que la VPN IPsec se encuentra establecida durante la prueba.
+
+Por lo tanto, en este escenario se comprueba tanto la conectividad de extremo a extremo como el funcionamiento del túnel.
 
 ---
 ---
@@ -327,7 +416,13 @@ timeout
 
 ![VPN bloqueada](Imagenes/image17.png)
 
-Esto demuestra que aunque la infraestructura VPN esté configurada, las políticas de firewall determinan si el tráfico puede atravesar el FortiGate.
+### Análisis del bloqueo
+
+Al deshabilitar la política que permite el tráfico desde `USUARIOS-VLAN10` hacia `VPN-USER-SERVER`, el FortiGate deja de permitir ese flujo.
+
+Aunque el túnel IPsec continúe configurado, la política de firewall determina si el tráfico puede atravesar el dispositivo.
+
+El resultado de `timeout` demuestra que el tráfico fue bloqueado y que la política de seguridad está teniendo efecto sobre la comunicación.
 
 ---
 ---
@@ -342,18 +437,30 @@ La comunicación fue restaurada correctamente.
 
 ![VPN restaurada](Imagenes/image18.png)
 
-Por lo tanto, las pruebas muestran el comportamiento esperado que seria que mientras la politica esta habilitada, la comunicación esta permitida y en cuanto se desactiva, la comunicación es bloqueada pero en cuanto la habilitamos de nuevo, la comunicación queda restaurada
+### Análisis de la restauración
+
+Después de habilitar nuevamente la política `USUARIOS-VLAN10 → VPN-USER-SERVER`, se realizó nuevamente la prueba de conectividad hacia `172.8.27.2`.
+
+El servidor volvió a responder correctamente.
+
+Esto demuestra que el bloqueo observado en la prueba anterior estaba relacionado con la política de firewall y que, al restaurar la autorización del tráfico, la comunicación entre ambas redes vuelve a funcionar.
+
+Por lo tanto, las tres pruebas permiten comprobar el comportamiento de la infraestructura en los estados permitido, bloqueado y restaurado.
 
 ---
 ---
 
 # Conclusión
 
-En esta práctica se implementó una infraestructura con dos FortiGate conectados mediante una VPN IPsec Site-to-Site. Se configuraron las redes de usuarios y servidores, el direccionamiento IP, DHCP, rutas, políticas de firewall y NAT.
+En esta práctica se implementó una infraestructura de red compuesta por dos FortiGate conectados mediante una VPN IPsec Site-to-Site. Se configuraron las redes de usuarios y servidores, el direccionamiento IP, DHCP, rutas, políticas de firewall y NAT.
 
-Las pruebas permitieron comprobar que el usuario de la red `10.8.27.0/25` puede comunicarse con el servidor ubicado en la red `172.8.27.0/28` cuando las políticas necesarias están habilitadas. Al deshabilitar la política que permite el tráfico hacia la VPN, la comunicación fue bloqueada y, al habilitarla nuevamente, fue restaurada.
+Durante la implementación se comprobó que el FGT-USUARIOS puede comunicarse con el FGT-SERVIDOR mediante el túnel IPsec y que el equipo de usuarios puede alcanzar el WEB-SERVER ubicado en la red remota.
 
-Con esto se comprobó de manera práctica el funcionamiento del túnel IPsec y la importancia de las políticas de firewall para controlar el tráfico entre ambas redes.
+Las pruebas realizadas también permitieron comprobar la función de las políticas de firewall. Con la política correspondiente habilitada, la comunicación entre ambas redes fue exitosa. Al deshabilitarla, el tráfico fue bloqueado y se obtuvo un `timeout`. Finalmente, al habilitar nuevamente la política, la comunicación fue restaurada.
+
+Esto permitió comprobar de manera práctica que la VPN establece el canal de comunicación entre las dos redes, mientras que las políticas de firewall determinan qué tráfico está permitido atravesar dicho canal.
+
+La práctica permitió reforzar los conceptos de segmentación de redes, direccionamiento, DHCP, NAT, enrutamiento, políticas de firewall y VPN IPsec Site-to-Site dentro de una infraestructura de Seguridad de Redes.
 
 ---
 ---
