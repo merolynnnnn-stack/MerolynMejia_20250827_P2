@@ -60,6 +60,7 @@ En el segundo extremo se encuentra el FGT-SERVIDOR, encargado de administrar la 
 Ambos FortiGate están conectados mediante un segmento WAN que representa el ISP dentro del entorno de GNS3. Sobre esta conexión se establece el túnel IPsec que permite transportar el tráfico entre las dos redes internas.
 
 De esta manera, las redes privadas no necesitan estar conectadas directamente, sino que utilizan los dos FortiGate como extremos de la comunicación segura.
+
 ---
 ---
 
